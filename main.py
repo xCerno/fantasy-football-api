@@ -3,7 +3,7 @@
 # Main file to call necessary functions
 
 #Import functions
-import functions.api_class as espnAPI
+import functions.espn_api_class as espnAPI
 import functions.data_functions as dataFunc
 import functions.formatting_functions as formatFunc
 

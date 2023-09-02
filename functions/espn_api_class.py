@@ -3,17 +3,17 @@
 # This py file calls the necessary APIs and convers the json returns to dataframes to be manipulated
 import requests
 import pandas as pd
-import league_info
+import espn_league_info
 import json
 
 
 class espnAPILeague:
     
     def __init__(self):
-        self.league_id = league_info.league_id
-        self.year = league_info.year
-        self.espn_s2 = league_info.espn_s2
-        self.swid = league_info.swid
+        self.league_id = espn_league_info.league_id
+        self.year = espn_league_info.year
+        self.espn_s2 = espn_league_info.espn_s2
+        self.swid = espn_league_info.swid
         self.cookies = {'swid':self.swid, 'espn_s2':self.espn_s2}
 
         # ESPN FF API URL - Customizing the request view below will return different results

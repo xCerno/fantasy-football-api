@@ -2,44 +2,10 @@
 # 8/24/23
 # This py file contains functions regarding formatting data that has been pulled from the dataframes
 import pandas as pd
-import copy
 import matplotlib.pyplot as mp
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
-
-def getReplacementValues(draft_data):
-    rep_values = {}
-    for position in draft_data['defaultPositionId'].unique():
-        position_df = draft_data[draft_data['defaultPositionId'] == position]
-        max_rank = position_df['positionalRanking'].max()
-        rep_values[position] = max_rank
-    draft_data['VORP'] = draft_data.apply(lambda row: rep_values[row['defaultPositionId']] - row['positionalRanking'], axis=1)
-    draft_data['NormalizedVORP'] = draft_data.apply(lambda row: row['VORP'] / rep_values[row['defaultPositionId']], axis=1)
-    draft_data['PickValue'] = (draft_data['NormalizedVORP']) * (1 / draft_data['overallPickNumber'])
-    draft_data['PickRank'] = draft_data['PickValue'].rank(ascending=False)
-    return draft_data
-    
-def getCountValues(draft_data):
-    # Start off by getting # of each position taken in the draft
-    wr_taken = draft_data['defaultPositionId'].value_counts()['WR']
-    rb_taken = draft_data['defaultPositionId'].value_counts()['RB']
-    qb_taken = draft_data['defaultPositionId'].value_counts()['QB']
-    d_st_taken = draft_data['defaultPositionId'].value_counts()['D/ST']
-    te_taken = draft_data['defaultPositionId'].value_counts()['TE']
-    k_taken = draft_data['defaultPositionId'].value_counts()['K']
-    # Get the number of picks overall
-    num_of_picks = draft_data['overallPickNumber'].max()
-    return [num_of_picks, qb_taken, wr_taken, rb_taken, d_st_taken, te_taken, k_taken]
-
-def evaluatePicks(draft_data):
-    new_draft_data = getReplacementValues(draft_data)
-    total_pick_arr = []
-    for index, row in new_draft_data.iterrows():
-        pick_num = row['overallPickNumber']
-        totalRank = row['totalRanking']
-        total_pick_arr.append((pick_num-totalRank))
-    new_draft_data['totalPickValue'] = total_pick_arr
-    return new_draft_data
+import functions.data_functions as dataFunc
 
 def plotData(eval_data):
     teams = eval_data.teamId.unique()
@@ -110,7 +76,7 @@ def formatCounts(data_arr, count_arr):
     return data_arr
 
 def draftText(draft_data):
-    evaluation_data = evaluatePicks(draft_data)
+    evaluation_data = dataFunc.evaluatePicks(draft_data)
     evaluation_data.to_csv('output/evaluated_data.csv')
     plotData(evaluation_data)
     positions = ['QB', 'WR', 'RB', 'K', 'D/ST', 'TE']
@@ -130,7 +96,7 @@ def draftText(draft_data):
         data_arr = formatTextForWrite(data_arr, evaluation_data, max_tpv_index, 'Max TPV')
         data_arr = formatTextForWrite(data_arr, evaluation_data, min_tpv_index, 'Min TPV')
     
-    count_arr = getCountValues(draft_data)
+    count_arr = dataFunc.getCountValues(draft_data)
     data_arr = formatCounts(data_arr, count_arr)
     
     with open('output/draftTxt.txt', 'w') as f:
