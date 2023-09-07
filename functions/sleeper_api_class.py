@@ -10,26 +10,31 @@ class sleeperAPILeague:
         self.leagueID = sleeper_league_info.leagueID
         
         self.sleeperURL = f'https://api.sleeper.app/v1/league/{self.leagueID}'
+        self.picksURL = f'https://api.sleeper.app/v1/draft/<draft_id>/picks'
         self.playerURL = 'https://api.sleeper.app/v1/players/nfl'
 
-    def callESPNAPI(self, requested_data = None, week = None):
+    def callSleeperAPI(self, reqData = None, week = None, draftID = None):
         # This function will call the Sleeper Fantasy Football API and return the json response
         # Params - Requested Data - This is the data requested to be shown, defaulted to None
         # Return - df - A dataframe of the json response data from the API
 
         # Based on the requested data, configure the params and url to use 
-        if requested_data == 'matchup':
+        if reqData == 'matchup':
             apiURL = self.sleeperURL + f'/matchups/{week}'
-        elif requested_data == 'draft':
+        elif reqData == 'draft':
             apiURL = self.sleeperURL + '/drafts'
-        elif requested_data == 'team':
+        elif reqData == 'picks':
+            apiURL = self.picksURL.replace('<draft_id>', draftID)
+        elif reqData == 'users':
             apiURL = self.sleeperURL + '/users'
-        elif requested_data == 'player':
+        elif reqData == 'players':
             apiURL = self.playerURL
+        elif reqData == 'trades':
+            apiURL = self.sleeperURL + '/traded_picks'
         else:
             apiURL = self.sleeperURL
         
         # Call the API with the URL and params selected
         response = requests.get(apiURL)
-        res_data = response.json()
-        return res_data
+        resData = response.json()
+        return resData

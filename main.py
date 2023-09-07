@@ -4,29 +4,56 @@
 
 #Import functions
 import functions.espn_api_class as espnAPI
-import functions.data_functions as dataFunc
-import functions.formatting_functions as formatFunc
+import functions.sleeper_api_class as sleeperAPI
+import functions.espn_data_functions as dataFunc
+import functions.espn_formatting_functions as formatFunc
 
+# Commented out section below - 9/5 to test sleeper API calls
 # Updating scripting below to utilize classes
 leagueClass = espnAPI.espnAPILeague()
 
-gen_data = leagueClass.callESPNAPI()
-league_name = dataFunc.getLeagueName(gen_data)
+genData = leagueClass.callESPNAPI()
+leagueName = dataFunc.getLeagueName(genData)
 
 # As of 8/29/23, API is not properly returning correct team names.
 # Function below commented out until properly functioning
 #ff_teams = dataFunc.mapTeams(gen_data)
-ff_teams = dataFunc.ffTeamsDict()
+ffTeams = dataFunc.ffTeamsDict()
 
-nfl_data = leagueClass.callESPNAPI('team')
-nfl_df = dataFunc.mapNFLTeams(nfl_data)
+nflData = leagueClass.callESPNAPI('team')
+nflDF = dataFunc.mapNFLTeams(nflData)
 
-player_data = leagueClass.callESPNAPI('player')
-player_df = dataFunc.mapPlayerData(player_data)
+playerData = leagueClass.callESPNAPI('player')
+playerDF = dataFunc.mapPlayerData(playerData)
 
-draft_data = leagueClass.callESPNAPI('draft')
-draft_df = dataFunc.mapDraft(draft_data, player_df, ff_teams, nfl_df)
-formatFunc.draftText(draft_df)
+draftData = leagueClass.callESPNAPI('draft')
+draftDF = dataFunc.mapDraft(draftData, playerDF, ffTeams, nflDF)
+formatFunc.draftText(draftDF)
 
-matchup_data = leagueClass.callESPNAPI('matchup')
-curr_schedule = dataFunc.mapSchedule(matchup_data, ff_teams)
+matchupData = leagueClass.callESPNAPI('matchup')
+currSchedule = dataFunc.mapSchedule(matchupData, ffTeams)
+
+
+# 9/7/23 - Testing Sleeper API functionality - WIP
+# sleeperClass = sleeperAPI.sleeperAPILeague()
+# sData = sleeperClass.callSleeperAPI('draft')[0]
+# draftID = sData['draft_id']
+# dData = sleeperClass.callSleeperAPI('picks', draftID=draftID)
+# #print(sData)
+# for key in dData:
+#     print(key)
+#     # List of Dictionaries, each dict is a pick
+#     # round
+#     # roster_id
+#     # player_id
+#     # picked_by
+#     # pick_no
+#     # metadata - This is a dict
+#         #years_exp
+#         #team
+#         #status
+#         #position
+#         #player_id
+#         #last_name
+#         #injursy_status
+#         #first_name
