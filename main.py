@@ -8,6 +8,7 @@ import functions.sleeper_api_class as sleeperAPI
 import functions.espn_data_functions as espnDataFunc
 import functions.espn_formatting_functions as espnFormatFunc
 import functions.sleeper_data_functions as sleepDataFunc
+import functions.sleeper_formatting_functions as sleepFormatFunc
 
 # Commented out section below - 9/5 to test sleeper API calls
 # Updating scripting below to utilize classes
@@ -16,9 +17,9 @@ import functions.sleeper_data_functions as sleepDataFunc
 # genData = leagueClass.callESPNAPI()
 # leagueName = espnDataFunc.getLeagueName(genData)
 
-#As of 8/29/23, API is not properly returning correct team names.
-#Function below commented out until properly functioning
-#ff_teams = dataFunc.mapTeams(gen_data)
+# # As of 8/29/23, API is not properly returning correct team names.
+# # Function below commented out until properly functioning
+# # ff_teams = dataFunc.mapTeams(gen_data)
 # ffTeams = espnDataFunc.espnFFTeams()
 
 # nflData = leagueClass.callESPNAPI('team')
@@ -32,24 +33,24 @@ import functions.sleeper_data_functions as sleepDataFunc
 # espnFormatFunc.draftText(draftDF)
 
 # matchupData = leagueClass.callESPNAPI('matchup')
-#currSchedule = espnDataFunc.mapSchedule(matchupData, ffTeams)
+# currSchedule = espnDataFunc.mapSchedule(matchupData, ffTeams)
 
-
-# 9/7/23 - Testing Sleeper API functionality - WIP
 sleeperClass = sleeperAPI.sleeperAPILeague()
+espnClass = espnAPI.espnAPILeague()
 genData = sleeperClass.callSleeperAPI()
 
 leagueDF = sleepDataFunc.mapLeagueData(genData)
-print(leagueDF)
-print()
 
 userData = sleeperClass.callSleeperAPI('users')
 userDF = sleepDataFunc.mapUsersData(userData)
-print(userDF)
-print()
 
-#playerData = sleeperClass.callSleeperAPI('players')
+# Sleeper's Player API Return doesn't give us anything that isn't already in the draft data, so we call ESPN's API
+# to get things like Overall Ranking and Positional Ranking.
+playerData = espnClass.callESPNAPI('player')
+playerDF = espnDataFunc.mapPlayerData(playerData)
 
 draftData = sleeperClass.callSleeperAPI('picks', draftID=leagueDF['Draft ID'][0])
 draftDF = sleepDataFunc.mapDraftPicks(draftData, userDF)
-print(draftDF)
+
+evalData = sleepDataFunc.evaluatePicks(draftDF, playerDF)
+sleepFormatFunc.draftText(evalData)

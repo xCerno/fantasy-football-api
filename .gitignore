@@ -2,3 +2,5 @@ espn_league_info.py
 espn_team_info.py
 output/*
 sleeper_league_info.py
+sleeper/*
+espn/*

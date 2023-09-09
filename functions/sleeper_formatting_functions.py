@@ -1,20 +1,30 @@
 # Regan Givens
-# 8/24/23
+# 9/5/23
 # This py file contains functions regarding formatting data that has been pulled from the dataframes
 import pandas as pd
 import matplotlib.pyplot as mp
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
-import functions.espn_data_functions as espnDataFunc
+import functions.sleeper_data_functions as sleepDataFunc
 
 def plotData(evalData):
-    teams = evalData.teamId.unique()
+    teams = evalData['Team Name'].unique()
     for team in teams:
-        teamEvalData = evalData[evalData['teamId'] == team]
+        teamEvalData = evalData[evalData['Team Name'] == team]
         teamEvalData = teamEvalData[(teamEvalData['totalRanking'].notna()) & (teamEvalData['totalRanking'] != 0)]
+        teamEvalData['Pick Number'] = teamEvalData['Pick Number'].astype('int')
+        maxPickNum = teamEvalData['Pick Number'].idxmax()
+        maxPickNum = maxPickNum + 25
+        if maxPickNum < 200:
+            maxPickNum = 200
+        teamEvalData['totalRanking'] = teamEvalData['totalRanking'].astype('float')
+        maxTotalRank = teamEvalData['totalRanking'].idxmax()
+        maxTotalRank = maxTotalRank + 25
+        if maxTotalRank < 200:
+            maxTotalRank = 200
         model = LinearRegression()
         X = teamEvalData[['totalRanking']]
-        Y = teamEvalData[['overallPickNumber']]
+        Y = teamEvalData[['Pick Number']]
         model.fit(X, Y)
         pickModel = model.predict(X)
         pickInt = '{:.2f}'.format(model.intercept_[0])
@@ -30,20 +40,20 @@ def plotData(evalData):
         mp.text(130, 4, lineStr, fontsize=12)
         mp.plot(X, Y, 'k. ')
         mp.plot(X, pickModel)
-        mp.xlim(0,200)
-        mp.ylim(0,200)
-        mp.savefig('espn/'+str(team)+'.png')
+        mp.xlim(0,maxPickNum)
+        mp.ylim(0,maxTotalRank)
+        mp.savefig('sleeper/'+str(team)+'.png')
 
 def formatDraftTxtForWrite(dataArr, df, index, header):
-    strDict = {'overallPickNumber': 'Overall Pick Number: ', 
-               'fullName': 'Player: ',
-               'teamId': 'Fantasy Team: ',
-               'proTeamId': 'NFL Team: ', 
+    strDict = {'Pick Number': 'Overall Pick Number: ', 
+               'Full Name': 'Player: ',
+               'Team Name': 'Fantasy Team: ',
+               'NFL Team': 'NFL Team: ', 
                'positionalRanking': 'Positional Ranking: ', 
                'totalRanking': 'Overall Ranking: ', 
-               'totalPickValue': 'Total Pick Value: ',
-               'PickRank': 'Pick Rank: ', 
-               'PickValue': 'Pick Value: '
+               'Total Pick Value': 'Total Pick Value: ',
+               'Pick Rank': 'Pick Rank: ', 
+               'Pick Value': 'Pick Value: '
                }
     dataCols = list(strDict.keys())
     rowData = df.loc[index]
@@ -70,20 +80,19 @@ def formatDraftCounts(dataArr, countArr):
         dataArr.append(strDict[index] + str(countArr[index]))
     return dataArr
 
-def draftText(draftData):
-    evalData = espnDataFunc.evaluatePicks(draftData)
-    evalData.to_csv('espn/evaluated_data.csv')
+def draftText(evalData):
+    evalData.to_csv('sleeper/evaluated_data.csv')
+    positions = list(evalData['Position'].unique())
     plotData(evalData)
-    positions = ['QB', 'WR', 'RB', 'K', 'D/ST', 'TE']
     dataArr = []
     for position in positions:
-        filteredEvalData = evalData[evalData['defaultPositionId'] == position]
+        filteredEvalData = evalData[evalData['Position'] == position]
         filteredEvalData = filteredEvalData[(filteredEvalData['positionalRanking'].notna()) & (filteredEvalData['positionalRanking'] != 0)]
         filteredEvalData = filteredEvalData[(filteredEvalData['totalRanking'].notna()) & (filteredEvalData['totalRanking'] != 0)]
-        maxPRIndex = filteredEvalData['PickRank'].idxmax()
-        minPRIndex = filteredEvalData['PickRank'].idxmin()
-        maxTPVIndex = filteredEvalData['totalPickValue'].idxmax()
-        minTPVIndex = filteredEvalData['totalPickValue'].idxmin()
+        maxPRIndex = filteredEvalData['Pick Rank'].idxmax()
+        minPRIndex = filteredEvalData['Pick Rank'].idxmin()
+        maxTPVIndex = filteredEvalData['Total Pick Value'].idxmax()
+        minTPVIndex = filteredEvalData['Total Pick Value'].idxmin()
         dataArr.append('\n')
         dataArr.append(str(position))
         dataArr = formatDraftTxtForWrite(dataArr, evalData, maxPRIndex, 'Max PR')
@@ -91,10 +100,10 @@ def draftText(draftData):
         dataArr = formatDraftTxtForWrite(dataArr, evalData, maxTPVIndex, 'Max TPV')
         dataArr = formatDraftTxtForWrite(dataArr, evalData, minTPVIndex, 'Min TPV')
     
-    countArr = espnDataFunc.getCountValues(draftData)
+    countArr = sleepDataFunc.getCountValues(evalData)
     dataArr = formatDraftCounts(dataArr, countArr)
     
-    with open('espn/draftTxt.txt', 'w') as f:
+    with open('sleeper/draftTxt.txt', 'w') as f:
         for line in dataArr:
             f.write(line)     
 
