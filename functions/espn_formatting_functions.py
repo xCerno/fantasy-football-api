@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as mp
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
-import functions.espn_data_functions as dataFunc
+import functions.espn_data_functions as espnDataFunc
 
 def plotData(evalData):
     teams = evalData.teamId.unique()
@@ -30,53 +30,44 @@ def plotData(evalData):
         mp.ylim(0,200)
         mp.savefig('output/'+str(team)+'.png')
 
-def formatTextForWrite(dataArr, df, index, header):
+def formatDraftTxtForWrite(dataArr, df, index, header):
+    dataCols = ['overallPickNumber', 'fullName', 'teamId', 'proTeamId', 'positionalRanking', 'totalRanking', 'totalPickValue', 'PickRank', 'PickValue']
+    strDict = {'overallPickNumber': 'Overall Pick Number: ', 
+               'fullName': 'Player: ',
+               'teamId': 'Fantasy Team: ',
+               'proTeamId': 'NFL Team: ', 
+               'positionalRanking': 'Positional Ranking: ', 
+               'totalRanking': 'Overall Ranking: ', 
+               'totalPickValue': 'Total Pick Value: ',
+               'PickRank': 'Pick Rank: ', 
+               'PickValue': 'Pick Value: '
+               }
     rowData = df.loc[index]
     dataArr.append('\n')
     dataArr.append(header)
-    dataArr.append('\n')
-    dataArr.append('\n')
-    dataArr.append('Overall Pick Number: ' + str(rowData['overallPickNumber']))
-    dataArr.append('\n')
-    dataArr.append('Player: ' + str(rowData['fullName']))
-    dataArr.append('\n')
-    dataArr.append('Fantasy Team: ' + str(rowData['teamId']))
-    dataArr.append('\n')
-    dataArr.append('NFL Team: ' + str(rowData['proTeamId']))
-    dataArr.append('\n')
-    dataArr.append('Positional Ranking: ' + str(rowData['positionalRanking']))
-    dataArr.append('\n')
-    dataArr.append('Overall Ranking: ' + str(rowData['totalRanking']))
-    dataArr.append('\n')
-    dataArr.append('Total Pick Value: ' + str(rowData['totalPickValue']))
-    dataArr.append('\n')
-    dataArr.append('Pick Rank: ' + str(rowData['PickRank']))
-    dataArr.append('\n')
-    dataArr.append('Pick Value: ' + str(rowData['PickValue']))
-    dataArr.append('\n')
+    for col in dataCols:
+        dataArr.append('\n')
+        dataArr.append('\n')
+        dataArr.append(strDict[col] + str(rowData[col]))
+        dataArr.append('\n')
     dataArr.append('\n')
     return dataArr
 
-def formatCounts(dataArr, countArr):
-    dataArr.append('\n')
-    dataArr.append('Number of Picks: ' + str(countArr[0]))
-    dataArr.append('\n')
-    dataArr.append('QBs Taken: ' + str(countArr[1]))
-    dataArr.append('\n')
-    dataArr.append('WRs Taken: ' + str(countArr[2]))
-    dataArr.append('\n')
-    dataArr.append('RBs Taken: ' + str(countArr[3]))
-    dataArr.append('\n')
-    dataArr.append('D/STs Taken: ' + str(countArr[4]))
-    dataArr.append('\n')
-    dataArr.append('TEs Taken: ' + str(countArr[5]))
-    dataArr.append('\n')
-    dataArr.append('Ks Taken: ' + str(countArr[6]))
-    dataArr.append('\n')
+def formatDraftCounts(dataArr, countArr):
+    strDict = {0: 'Number of Picks: ',
+               1: 'QBs Taken: ',
+               2: 'WRs Taken: ',
+               3: 'RBs Taken: ',
+               4: 'D/STs Taken: ',
+               5: 'TEs Taken: ',
+               6: 'Ks Taken: '}
+    for index in range(len(countArr)):
+        dataArr.append('\n')
+        dataArr.append(strDict[index] + str(countArr[index]))
     return dataArr
 
 def draftText(draftData):
-    evalData = dataFunc.evaluatePicks(draftData)
+    evalData = espnDataFunc.evaluatePicks(draftData)
     evalData.to_csv('output/evaluated_data.csv')
     plotData(evalData)
     positions = ['QB', 'WR', 'RB', 'K', 'D/ST', 'TE']
@@ -91,13 +82,13 @@ def draftText(draftData):
         minTPVIndex = filteredEvalData['totalPickValue'].idxmin()
         dataArr.append('\n')
         dataArr.append(str(position))
-        dataArr = formatTextForWrite(dataArr, evalData, maxPRIndex, 'Max PR')
-        dataArr = formatTextForWrite(dataArr, evalData, minPRIndex, 'Min PR')
-        dataArr = formatTextForWrite(dataArr, evalData, maxTPVIndex, 'Max TPV')
-        dataArr = formatTextForWrite(dataArr, evalData, minTPVIndex, 'Min TPV')
+        dataArr = formatDraftTxtForWrite(dataArr, evalData, maxPRIndex, 'Max PR')
+        dataArr = formatDraftTxtForWrite(dataArr, evalData, minPRIndex, 'Min PR')
+        dataArr = formatDraftTxtForWrite(dataArr, evalData, maxTPVIndex, 'Max TPV')
+        dataArr = formatDraftTxtForWrite(dataArr, evalData, minTPVIndex, 'Min TPV')
     
-    countArr = dataFunc.getCountValues(draftData)
-    dataArr = formatCounts(dataArr, countArr)
+    countArr = espnDataFunc.getCountValues(draftData)
+    dataArr = formatDraftCounts(dataArr, countArr)
     
     with open('output/draftTxt.txt', 'w') as f:
         for line in dataArr:

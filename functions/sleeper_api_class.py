@@ -21,8 +21,8 @@ class sleeperAPILeague:
         # Based on the requested data, configure the params and url to use 
         if reqData == 'matchup':
             apiURL = self.sleeperURL + f'/matchups/{week}'
-        elif reqData == 'draft':
-            apiURL = self.sleeperURL + '/drafts'
+        elif reqData == 'rosters':
+            apiURL = self.sleeperURL + '/rosters'
         elif reqData == 'picks':
             apiURL = self.picksURL.replace('<draft_id>', draftID)
         elif reqData == 'users':
@@ -38,3 +38,84 @@ class sleeperAPILeague:
         response = requests.get(apiURL)
         resData = response.json()
         return resData
+    
+# Comments on the kinds of data returned by API calls
+
+# General League API Return Important Data
+    # Total Rosters
+    # Status
+    # Settings
+    # Season Type
+    # Season
+    # Scoring Settings
+    # Roster Positions
+    # Name
+    # Draft ID
+
+# Draft Picks Return
+    # List of Dictionaries, each dict is a pick
+    # round
+    # roster_id
+    # player_id
+    # picked_by
+    # pick_no
+    # is_keeper
+    # metadata - This is a dict
+        #years_exp
+        #team
+        #status
+        #position
+        #player_id
+        #last_name
+        #injursy_status
+        #first_name
+
+# Players return
+    # List of Dictionaries - This data is MASSIVE and suggested to be saved
+    # First key is the Player ID that contains a dictionary of the player's info
+        # Status
+        # Depth Chart Position
+        # Fantasy Positions
+        # Number
+        # Injury Start Date
+        # Position
+        # Team
+        # First Name and Last Name
+        # College
+        # Fantasy Data ID
+        # Injury Status
+        # Player ID
+        # Height
+        # Age
+        # Depth Chart Order
+        # Years Exp
+
+# Rosters return
+    # List of Dictionaries
+    # Starters - List of Player IDs
+    # Settings - Dictionary
+        # Wins
+        # Waiver Position
+        # Waiver Budget Used
+        # Total Moves
+        # Ties
+        # Losses
+        # fpts decimal
+        # fpts_against_decimal
+        # fpts_against
+        # fpts
+    # roster id
+    # players - this is a list of all players
+    # owner id
+    # reserve - list of reserve players
+
+# Users Return
+    # List of Dictionaries
+    # User ID
+    # Settings
+    # Metadata
+    # League ID
+    # Is Owner
+    # Is Bot
+    # Display Name
+    # Avatar
