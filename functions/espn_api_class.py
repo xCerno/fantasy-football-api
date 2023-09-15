@@ -18,22 +18,27 @@ class espnAPILeague:
 
         # ESPN FF API URL - Customizing the request view below will return different results
         self.ffURL = f'https://fantasy.espn.com/apis/v3/games/ffl/seasons/{self.year}/segments/0/leagues/{self.leagueID}'
-
+        
+        # ESPN Match URL
+        self.matchURL = f'https://fantasy.espn.com/apis/v3/games/ffl/seasons/{self.year}/segments/0/leagues/{self.leagueID}?view=mMatchup&view=mMatchupScore'
+        
         # ESPN Players API URL
         self.playerURL = f'https://fantasy.espn.com/apis/v3/games/ffl/seasons/{self.year}/segments/0/leaguedefaults/3?view=kona_player_info'
         
         # ESPN Team API URL
         self.teamURL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams'
 
-    def callESPNAPI(self, reqData = None):
+    def callESPNAPI(self, reqData = None, week = None):
         # This function will call the ESPN Fantasy Football API and return the json response
         # Params - Requested Data - This is the data requested to be shown, defaulted to None
         # Return - df - A dataframe of the json response data from the API
 
         # Based on the requested data, configure the params and url to use 
         if reqData == 'matchup':
-            params = {'view':'mMatchup'}
-            apiURL = self.ffURL
+            params = {}
+            if week is not None:
+                params['scoringPeriodId'] = week
+            apiURL = self.matchURL
         elif reqData == 'draft':
             params = {'view':'mDraftDetail'}
             apiURL = self.ffURL

@@ -59,9 +59,8 @@ def formatDraftTxtForWrite(dataArr, df, index, header):
     rowData = df.loc[index]
     dataArr.append('\n')
     dataArr.append(header)
+    dataArr.append('\n')
     for col in dataCols:
-        dataArr.append('\n')
-        dataArr.append('\n')
         dataArr.append(strDict[col] + str(rowData[col]))
         dataArr.append('\n')
     dataArr.append('\n')
@@ -93,7 +92,8 @@ def draftText(evalData):
         minPRIndex = filteredEvalData['Pick Rank'].idxmin()
         maxTPVIndex = filteredEvalData['Total Pick Value'].idxmax()
         minTPVIndex = filteredEvalData['Total Pick Value'].idxmin()
-        dataArr.append('\n')
+        if position != 'WR':
+            dataArr.append('\n')
         dataArr.append(str(position))
         dataArr = formatDraftTxtForWrite(dataArr, evalData, maxPRIndex, 'Max PR')
         dataArr = formatDraftTxtForWrite(dataArr, evalData, minPRIndex, 'Min PR')

@@ -98,5 +98,104 @@ def draftText(draftData):
         for line in dataArr:
             f.write(line)     
 
-def weeklyMatchupEmail(matchupData):
-    pass
+def slotIDReplace(idVal):
+    if idVal == 20:
+        return 'BENCH'
+    else:
+        return 'STARTER'
+
+def buildRoster(rosterDF):
+    rosterDF = rosterDF.sort_values(by=['Position']) # Sorting like this will always result in D/ST, K, QB, RB, WR
+    rosterDF.loc[rosterDF['Slot ID'] != 20, 'Slot Value'] = 'STARTER' 
+    rosterDF.loc[rosterDF['Slot ID'] == 20, 'Slot Value'] = 'BENCH' 
+    playerArr = []
+    retStarters = []
+    retBench = []
+    for index, player in rosterDF.iterrows():
+        name = player['Player Name']
+        if name not in playerArr:
+            playerArr.append(name)
+            position = player['Position']
+            points = '{:.2f}'.format(float(player['Applied Total']))
+            slot = player['Slot Value']
+            if slot == 'STARTER':
+                retStarters.append(f'\n{name} - {position} - {points}')
+            else:
+                retBench.append(f'\n{name} - {position} - {points}')
+    return retStarters, retBench
+
+def formatMatchup(match, dataArr):
+    playerArrDict = {
+        0: 'Slot ID',
+        1: 'Player Name',
+        2: 'Position',
+        3: 'Player Actual Stats',
+        4: 'Player Projected Stats'
+    }
+    dfHeaders = ['Slot ID', 'Player Name', 'Position', 'Applied Total', 'Player Actual Stats', 'Player Projected Stats']
+    homeTeam = match['home team']
+    homeScore = match['home score']
+    homeRoster = match['home roster']
+    homeDF = pd.DataFrame()
+    for player in homeRoster:
+        homeRow = pd.Series([player[0],player[1],player[2], player[3], player[4], player[5]], index=dfHeaders)
+        homeDF = pd.concat([homeDF, homeRow.to_frame().T], ignore_index=True)
+
+    awayTeam = match['away team']
+    awayScore = match['away score']
+    awayRoster = match['away roster']
+    awayDF = pd.DataFrame()
+    for player in awayRoster:
+        awayRow =  pd.Series([player[0],player[1],player[2], player[3], player[4], player[5]], index=dfHeaders)
+        awayDF = pd.concat([awayDF, awayRow.to_frame().T], ignore_index=True)
+    
+    matchStr = f'{homeTeam} vs. {awayTeam}'
+    scoreStr = f'\n{homeScore} - {awayScore}'
+    # From build roster the order is always D/ST, K, QB, RB, TE, WR
+    awayRoster = buildRoster(awayDF)
+    awayStarters = awayRoster[0]
+    awayBench = awayRoster[1]
+    homeRoster = buildRoster(homeDF)
+    homeStarters = homeRoster[0]
+    homeBench = homeRoster[1]
+
+    dataArr.append(matchStr)
+    dataArr.append(scoreStr)
+    dataArr.append(f'\n{homeTeam} Starters:')
+    for homePlayer in homeStarters:
+        dataArr.append(homePlayer)
+    dataArr.append('\n')
+    dataArr.append(f'\n{homeTeam} Bench:')
+    for homePlayer in homeBench:
+        dataArr.append(homePlayer)
+    dataArr.append('\n')
+    dataArr.append(f'\n{awayTeam} Starters:')
+    for awayPlayer in awayStarters:
+        dataArr.append(awayPlayer)
+    dataArr.append('\n')
+    dataArr.append(f'\n{awayTeam} Bench:')
+    for awayPlayer in awayBench:
+        dataArr.append(awayPlayer)
+    dataArr.append('\n\n')
+    return dataArr
+    
+def matchupText(matchupData, week, leagueName):
+    # Matchup Data at this point is an array of objects
+    # Away Team
+    # Away Score
+    # Away Roster
+        # Slot ID
+        # Player Name
+        # Position
+        # Player Actual Stats 
+        # Player Projected Stats
+    # Home has same data
+    # Winner
+    dataArr = [f'Week {week} of {leagueName}\n']
+    for match in matchupData:
+        dataArr = formatMatchup(match, dataArr)
+
+    fileStr = f'espn/{leagueName}_Week_{week}.txt'
+    with open(fileStr, 'w') as f:
+        for line in dataArr:
+            f.write(line)

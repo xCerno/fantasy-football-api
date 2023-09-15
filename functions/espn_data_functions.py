@@ -15,6 +15,38 @@ positionMap = {
  16: 'D/ST'
 }
 
+statMap = {
+    '0' : 'Pass Attempts',
+    '1' : 'Completions',
+    '3' : 'Pass Yards',
+    '4' : 'Pass TDs',
+    '20' : 'Interceptions',
+    '23' : 'Rushing Attempts',
+    '24' : 'Rushing Yards',
+    '25' : 'Rushing TDs',
+    '41' : 'Receptions',
+    '42' : 'Receiving Yards',
+    '43' : 'Receiving TDs',
+    '83' : 'Made Field Goals',
+    '84' : 'Attempted Field Goals',
+    '85' : 'Missed Field Goals',
+    '86' : 'Made Extra Points',
+    '87' : 'Attempted Extra Points',
+    '88' : 'Missed Extra Points',
+    '93': 'Defense Blocked Kick for TD',
+    '94': 'Defense TDs',
+    '95': 'Defense Interceptions',
+    '96': 'Defense Fumbles',
+    '97': 'Defense Blocked Kicks',
+    '98': 'Defense Safeties', 
+    '99': 'Defense Sacks',
+    '103': 'INT Returned for TD',
+    '104': 'Fumbles Returned for TD',
+    '106': 'Defense Forced Fumbles',
+    '120': 'Defense Points Allowed',
+    '127': 'Defense Yards Allowed'
+}
+
 # For the time being, the API isn't properly getting the updated names of teams in my league.
 # Below is the hardcoded team dictionary in a py file labeled 'team_info' to be replaced later by the mapTeams function
 ffTeamsDict = espn_team_info.teams
@@ -53,7 +85,54 @@ def mapTeams(genData):
     # Return the team dictionary
     return teamDict
 
-def getMatchupResults(match, teamData):
+def getRosterInfo(rosterData, teamID, week):
+    # Function to pass in the roster data and return relevant info
+    # Rosters are built as a list of every roster for every team in the league
+    # ID = FF Team ID
+    # Roster For Current Scoring Period  -> Entries & Applied Stat Total
+    # Entries -> List
+    # Player Pool Entry
+    # Player
+    # Stats
+    # Applied Total = Points
+    # Stats within Stats maps to statMap above
+    # Stat Source ID = 1 (Projected)
+    # Stat Source ID = 0 (Actual)
+    rosterArr = []
+    for roster in rosterData:
+        if roster['id'] == teamID:
+            teamRoster = roster['roster']['entries']
+            for playerEntry in teamRoster:
+                slotID = playerEntry['lineupSlotId']
+                playerData = playerEntry['playerPoolEntry']['player']
+                playerName = playerData['fullName']
+                positionID = playerData['defaultPositionId']
+                position = positionMap[positionID]
+                stats = playerData['stats']
+                appliedTot = 0
+                playerActStats = {}
+                playerProjStats = {}
+                for stat in stats:
+                    if stat['scoringPeriodId'] == week and stat['statSourceId'] == 0 and stat['stats'] != {}:
+                        appliedTot = stat['appliedTotal']
+                        actualStats = stat['stats']
+                        #playerActStats = {}
+                        for actStat in actualStats:
+                            if actStat in statMap:
+                                playerActStats[statMap[actStat]] = actualStats[actStat]
+                    elif stat['scoringPeriodId'] == week and stat['statSourceId'] == 1 and stat['stats'] != {}:
+                        #appliedTot = stat['appliedTotal']
+                        projectedStats = stat['stats']
+                        #playerProjStats = {}
+                        for projStat in projectedStats:
+                            if projStat in statMap:
+                                playerProjStats[statMap[projStat]] = projectedStats[projStat]
+                rosterArr.append([slotID, playerName, position, appliedTot, playerActStats, playerProjStats])
+            break
+    return rosterArr
+
+
+def getMatchupResults(match, teamData, rosterData, week):
     # Function to intake individual matches and return a dictionary of away team name, away team points, home team name, home team points, and winner
     # Grab Away ID, Home ID, Away Score, Home Score, and Winner
     awayID = match['away']['teamId']
@@ -70,22 +149,29 @@ def getMatchupResults(match, teamData):
     for teams in teamData:
         if awayID == teams:
             awayTeam = teamData[teams]
+            awayRoster = getRosterInfo(rosterData, awayID, week)
         if homeID == teams:
             homeTeam = teamData[teams]
+            homeRoster = getRosterInfo(rosterData, homeID, week)
         if homeTeam != '' and awayTeam != '':
             break
 
     # Return a single dictionary of the data we need    
-    return {'away team': awayTeam, 'away score': awayScore, 'home team': homeTeam, 'home score': homeScore, 'winner': winner}
+    return {'away team': awayTeam, 'away score': awayScore, 'away roster':awayRoster, 'home team': homeTeam, 'home score': homeScore, 'home roster': homeRoster, 'winner': winner}
      
-def mapSchedule(matchupData, teamData):
+def mapSchedule(matchupData, teamData, week=None):
     # Function to intake a dataframe for matches and an array of dictionaries for teams and return the week results for the current week
     # Initialize an array to hold the matchup data to be returned
     matchArr = []
     # Grab the schedule data from the API response dataframe
     scheduleData = matchupData['schedule']
+    # Grab the FF Teams Data which holds rosters for a given week
+    teamRosters = matchupData['teams']
     # Get the current week of fantasy football from the matchup data
-    currWeek = currentWeek(matchupData)
+    if week is None:    
+        currWeek = currentWeek(matchupData)
+    else:
+        currWeek = week
     # Loop through the schedule data to generate the home and away teams, how many points they scored, and who won
     for match in scheduleData:
         # Get the week value
@@ -93,7 +179,7 @@ def mapSchedule(matchupData, teamData):
         # If the week matches the current week, continue
         if week == currWeek:
            # Get the match dictionary from getMatchupResults function above
-           matchDict = getMatchupResults(match, teamData)
+           matchDict = getMatchupResults(match, teamData, teamRosters, week)
            # Append the match dict to the match arr
            matchArr.append(matchDict)
     # Return the array       
