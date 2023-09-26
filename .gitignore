@@ -4,3 +4,8 @@ output/*
 sleeper_league_info.py
 sleeper/*
 espn/*
+functions/espn_data_functions.py
+functions/espn_formatting_functions.py
+functions/sleeper_api_class.py
+functions/sleeper_data_functions.py
+functions/sleeper_formatting_functions.py
