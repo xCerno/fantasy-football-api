@@ -439,6 +439,72 @@ class espnAPILeague:
                     retBench.append(f'\n{name} - {position} - {points}')
         return retStarters, retBench
 
+    def bestTeam(self, rosterDF):
+        # Full team is QB, RB1, RB2, WR1, WR2, TE, FLEX, D/ST, K
+        # Flex can be WR, RB, TE
+        rosterDF = rosterDF.sort_values(by=['Position', 'Applied Total'], ascending=[True, False]) # Sorting like this will always result in D/ST, K, QB, RB, WR
+        playerArr = []
+        bestTeam = {}
+        for index, player in rosterDF.iterrows():
+            name = player['Player Name']
+            if name not in playerArr:
+                playerArr.append(name)
+                position = player['Position']
+                points = float(player['Applied Total'])
+                pointArr = [name, points]
+                if position in ['QB', 'D/ST', 'K'] and position not in bestTeam.keys():
+                    bestTeam[position] = pointArr
+                elif position == 'WR':
+                    if 'WR1' not in bestTeam.keys():
+                        bestTeam['WR1'] = pointArr
+                    elif 'WR2' not in bestTeam.keys():
+                        bestTeam['WR2'] = pointArr
+                    elif 'FLEX' not in bestTeam.keys():
+                        bestTeam['FLEX'] = pointArr
+                    else:
+                        wrOne = bestTeam['WR1'][1]
+                        wrTwo = bestTeam['WR2'][1]
+                        flex = bestTeam['FLEX'][1]
+                        if points > wrOne:
+                            bestTeam['WR1'] = pointArr
+                        elif points > wrTwo:
+                            bestTeam['WR2'] = pointArr
+                        elif points > flex:
+                            bestTeam['FLEX'] = pointArr
+                elif position == 'RB':
+                    if 'RB1' not in bestTeam.keys():
+                        bestTeam['RB1'] = pointArr
+                    elif 'RB2' not in bestTeam.keys():
+                        bestTeam['RB2'] = pointArr
+                    elif 'FLEX' not in bestTeam.keys():
+                        bestTeam['FLEX'] = pointArr
+                    else:
+                        rbOne = bestTeam['RB1'][1]
+                        rbTwo = bestTeam['RB2'][1]
+                        flex = bestTeam['FLEX'][1]
+                        if points > rbOne:
+                            bestTeam['RB1'] = pointArr
+                        elif points > rbTwo:
+                            bestTeam['RB2'] = pointArr
+                        elif points > flex:
+                            bestTeam['FLEX'] = pointArr
+                elif position == 'TE':
+                    if 'TE' not in bestTeam.keys():
+                        bestTeam['TE'] = pointArr
+                    elif 'FLEX' not in bestTeam.keys():
+                        bestTeam['FLEX'] = pointArr
+                    else:
+                        teOne = bestTeam['TE'][1]
+                        flex = bestTeam['FLEX'][1]
+                        if points > teOne:
+                            bestTeam['TE'] = pointArr
+                        elif points > flex:
+                           bestTeam['FLEX'] = pointArr
+        bestPoints = 0
+        for playPos in bestTeam.keys():
+            bestPoints += bestTeam[playPos][1]
+        return bestPoints
+
     def formatMatchup(self, match, dataArr):
         playerArrDict = {
             0: 'Slot ID',
@@ -468,9 +534,15 @@ class espnAPILeague:
         scoreStr = f'\n{homeScore} - {awayScore}'
         # From build roster the order is always D/ST, K, QB, RB, TE, WR
         awayRoster = self.buildRoster(awayDF)
+        awayBest = self.bestTeam(awayDF)
+        awayEff = (awayScore/awayBest)*100
+        awayEff = '{:.2f}%'.format(float(awayEff))
         awayStarters = awayRoster[0]
         awayBench = awayRoster[1]
         homeRoster = self.buildRoster(homeDF)
+        homeBest = self.bestTeam(homeDF)
+        homeEff = (homeScore/homeBest)*100
+        homeEff = '{:.2f}%'.format(float(homeEff))
         homeStarters = homeRoster[0]
         homeBench = homeRoster[1]
 
@@ -484,6 +556,9 @@ class espnAPILeague:
         for homePlayer in homeBench:
             dataArr.append(homePlayer)
         dataArr.append('\n')
+        dataArr.append(f'\n{homeTeam} Best Score: {homeBest}')
+        dataArr.append(f'\n{homeTeam} Efficiency: {homeEff}')
+        dataArr.append('\n')
         dataArr.append(f'\n{awayTeam} Starters:')
         for awayPlayer in awayStarters:
             dataArr.append(awayPlayer)
@@ -491,6 +566,9 @@ class espnAPILeague:
         dataArr.append(f'\n{awayTeam} Bench:')
         for awayPlayer in awayBench:
             dataArr.append(awayPlayer)
+        dataArr.append('\n')
+        dataArr.append(f'\n{awayTeam} Best Score: {awayBest}')
+        dataArr.append(f'\n{awayTeam} Efficiency: {awayEff}')
         dataArr.append('\n\n')
         return dataArr
         
@@ -513,8 +591,8 @@ class espnAPILeague:
         fileStr = f'espn/{leagueName}_Week_{week}.txt'
         with open(fileStr, 'w') as f:
             for line in dataArr:
-                f.write(line)
-    
+                f.write(line)    
+
     def run(self, weekVal, draftOpt = None):
         genData = self.callESPNAPI()
         leagueName = self.getLeagueName(genData)
